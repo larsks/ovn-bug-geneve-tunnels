@@ -1,0 +1,35 @@
+---
+- hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: enable EPEL repository
+      package:
+        name: epel-release
+        state: installed
+      when: >-
+        ansible_distribution.lower() == 'centos'
+
+    - name: enable delorean deps repository
+      get_url:
+        url: http://trunk.rdoproject.org/centos8/delorean-deps.repo
+        dest: /etc/yum.repos.d/delorean-deps.repo
+      when: >-
+        ansible_distribution.lower() == 'centos'
+
+    - name: Ensure firewalld is disabled
+      service:
+        name: firewalld
+        state: stopped
+        enabled: false
+
+    - name: install openvswitch/ovn packages
+      package:
+        name: "{{ packages }}"
+        state: installed
+      vars:
+        packages:
+          - libibverbs
+          - openvswitch
+          - openvswitch-ovn-host
+          - openvswitch-ovn-central

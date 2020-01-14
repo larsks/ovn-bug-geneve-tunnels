@@ -1,0 +1,35 @@
+- name: perform common configuration
+  hosts: ovn
+  become: true
+  tasks:
+    - name: add local repository
+      yum_repository:
+        name: local
+        description: local packages
+        baseurl: http://192.168.122.1:8080
+        gpgcheck: false
+      when: use_local_repo|default(false)|bool
+
+    - name: upgrade all packages
+      package:
+        name: '*'
+        state: latest
+    - script: configure-common.sh
+
+- name: configure controller
+  hosts: ovn_central
+  become: true
+  tasks:
+    - script: configure-controller.sh
+
+- name: connect nodes to controller
+  hosts: ovn
+  become: true
+  tasks:
+    - script: connect-to-controller.sh
+
+- name: test environment
+  hosts: localhost
+  tags: [test]
+  tasks:
+    - command: pytest -vx tests/test_ports.py
